@@ -1,0 +1,535 @@
+<!DOCTYPE html>
+<html lang="bg">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#0b1f3a">
+<title>Вендинг Pro</title>
+<style>
+:root{--navy:#0b1f3a;--navy2:#15325c;--bg:#f2f4f8;--card:#ffffff;--txt:#1b2433;--mut:#5f6b7c;--line:#dde2ea;
+--soft:#eef2f8;--soft2:#e6ebf2;--ic:#f4ece6;--okbg:#e3f6ed;--warnbg:#fdf1dc;--warntx:#9a6200;--badbg:#fde6e7;
+--ok:#1a9a60;--warn:#e09612;--bad:#d9434a;--blue:#2f6fed;--vio:#7457e8;--teal:#0f9a9a;--brown:#8a5a3c}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){color-scheme:dark;--bg:#0c1320;--card:#162133;--txt:#e6ebf3;--mut:#9aa6b8;--line:#26344a;--soft:#1c2a40;--soft2:#223149;--ic:#2d241f;--okbg:#123626;--warnbg:#3a2c12;--warntx:#f2b84b;--badbg:#3d1a1d;--ok:#3fcf8e;--bad:#f06a70}}
+:root[data-theme="dark"]{color-scheme:dark;--bg:#0c1320;--card:#162133;--txt:#e6ebf3;--mut:#9aa6b8;--line:#26344a;--soft:#1c2a40;--soft2:#223149;--ic:#2d241f;--okbg:#123626;--warnbg:#3a2c12;--warntx:#f2b84b;--badbg:#3d1a1d;--ok:#3fcf8e;--bad:#f06a70}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{max-width:100%;overflow-x:hidden}
+body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;background:var(--bg);color:var(--txt);-webkit-text-size-adjust:100%;padding-bottom:40px;font-size:15px}
+.demo{background:#f0a020;color:#1b1400;font-size:13px;font-weight:600;padding:8px 16px;display:flex;flex-wrap:wrap;gap:8px;align-items:center;justify-content:space-between}
+.demo .sw{display:flex;gap:4px}
+.demo button{border:0;border-radius:8px;padding:5px 10px;font-weight:700;font-size:12px;background:rgba(0,0,0,.12);color:#1b1400;cursor:pointer}
+.demo button.on{background:#1b1400;color:#f0a020}
+header{background:linear-gradient(160deg,var(--navy),var(--navy2));color:#fff;padding:14px 16px 20px;border-radius:0 0 22px 22px}
+.top{display:flex;align-items:center;gap:10px}
+.top h1{font-size:20px;margin:0;flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.top small{opacity:.75;font-size:13px}
+.back{background:rgba(255,255,255,.15);border:0;color:#fff;font-size:20px;width:36px;height:36px;border-radius:10px;cursor:pointer;flex:none}
+.counters{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-top:16px}
+.cnt{background:rgba(255,255,255,.1);border-radius:12px;padding:10px 4px;text-align:center}
+.cnt b{display:block;font-size:22px;font-variant-numeric:tabular-nums}
+.cnt span{font-size:11px;opacity:.8}
+main{padding:16px;max-width:720px;margin:0 auto}
+.tiles{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:18px}
+.tile{border:0;border-radius:16px;color:#fff;padding:16px 6px;font-size:13px;font-weight:600;display:flex;flex-direction:column;align-items:center;gap:6px;cursor:pointer}
+.tile i{font-style:normal;font-size:26px}
+h2{font-size:16px;margin:18px 0 10px}
+.card{background:var(--card);border-radius:14px;padding:12px 14px;margin-bottom:10px;box-shadow:0 1px 3px rgba(0,0,0,.08)}
+.mc{display:flex;gap:12px;align-items:center;cursor:pointer}
+.mc .ic{width:42px;height:42px;border-radius:12px;background:var(--ic);display:flex;align-items:center;justify-content:center;font-size:22px;flex:none}
+.mc .t{flex:1;min-width:0}
+.mc .t b{display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.mut{color:var(--mut);font-size:13px;font-variant-numeric:tabular-nums}
+.badge{font-size:11px;font-weight:700;padding:4px 8px;border-radius:20px;white-space:nowrap}
+.b-ok{background:var(--okbg);color:var(--ok)}.b-warn{background:var(--warnbg);color:var(--warntx)}.b-bad{background:var(--badbg);color:var(--bad)}
+label{display:block;font-size:13px;color:var(--mut);margin:12px 0 4px}
+label.chk{display:flex;gap:8px;align-items:center;color:var(--txt)}
+label.chk input{width:auto}
+input,select,textarea{width:100%;font-size:16px;padding:12px;border:1px solid var(--line);border-radius:10px;background:var(--card);color:var(--txt);font-family:inherit}
+input:focus-visible,select:focus-visible,textarea:focus-visible,button:focus-visible{outline:2px solid var(--blue);outline-offset:2px}
+textarea{min-height:70px}
+.row{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.btn{width:100%;border:0;border-radius:12px;padding:14px;font-size:16px;font-weight:700;color:#fff;background:var(--blue);margin-top:16px;cursor:pointer}
+.btn.sec{background:var(--soft2);color:var(--txt)}
+.calc{background:var(--soft);border-radius:10px;padding:10px 12px;margin-top:12px;font-size:14px;line-height:1.6}
+.kv{display:flex;justify-content:space-between;gap:10px;font-size:14px;padding:5px 0;border-bottom:1px solid var(--line);font-variant-numeric:tabular-nums}
+.kv:last-child{border:0}
+.kv b{text-align:right}
+.search{margin-bottom:12px}
+.toast{position:fixed;left:16px;right:16px;bottom:calc(20px + env(safe-area-inset-bottom,0px));background:var(--navy);color:#fff;padding:14px;border-radius:12px;text-align:center;font-weight:600;z-index:9}
+.toast.err{background:var(--bad)}
+.center{text-align:center;padding:40px 10px;color:var(--mut)}
+.link{word-break:break-all;font-size:12px;background:var(--soft);padding:8px;border-radius:8px;margin-top:6px}
+.tabs{display:flex;gap:6px;margin:10px 0}
+.tabs button{flex:1;border:0;border-radius:10px;padding:10px;background:var(--soft2);color:var(--txt);font-weight:600;font-size:13px;cursor:pointer}
+.tabs button.on{background:var(--navy);color:#fff}
+.days button{padding:8px 0;display:flex;flex-direction:column;align-items:center;gap:2px}
+.days button small{font-size:11px;opacity:.7;font-weight:500}
+.days button.today:not(.on){box-shadow:inset 0 0 0 2px var(--blue)}
+.b-soft{background:var(--soft2);color:var(--mut)}
+.daypick{display:flex;flex-wrap:wrap;gap:8px 14px;padding:4px 0}
+.daypick label.chk{margin:0}
+@media (max-width:380px){.cnt b{font-size:18px}.tile{font-size:12px}}
+</style>
+<style>body{margin:0}</style>
+</head>
+<body>
+<div class="demo"><span>Демо с примерни данни — нищо не се записва</span><span class="sw"><button id="r_admin" class="on" onclick="setRole('admin')">Админ</button><button id="r_tech" onclick="setRole('tech')">Техник</button></span></div>
+<header id="hdr"></header>
+<main id="app"><div class="center">Зареждане…</div></main>
+<div class="toast" id="toast" hidden></div>
+
+<script>
+/* ===== ДЕМО: примерна база в паметта (в истинското приложение това е Google Sheets) ===== */
+const USER = { name: 'Администратор', role: 'admin' };
+const r2 = n => Math.round(n * 100) / 100;
+const numv = x => { const n = parseFloat(String(x).replace(',', '.')); return isNaN(n) ? 0 : n; };
+const blankv = x => x === undefined || x === null || String(x).trim() === '';
+const todayStr = () => { const d = new Date(); d.setMinutes(d.getMinutes() - d.getTimezoneOffset()); return d.toISOString().slice(0, 10); };
+let seq = 1; const nid = () => 'd' + (seq++);
+const DB = (() => {
+  let seed = 7; const rnd = () => (seed = (seed * 16807) % 2147483647) / 2147483647;
+  const list = [
+    ['01', 'Бизнес център Хемус', 'Хемус ООД', 'бул. България 118', 'Necta Kikko Max'],
+    ['02', 'Автосервиз Изток', 'Изток Моторс', 'ул. Резово 4', 'Saeco Cristallo 400'],
+    ['03', 'Склад Логистик', 'Логистик Плюс', 'Индустриална зона, хале 3', 'Necta Opera'],
+    ['04', 'Фитнес Олимп', 'Олимп Спорт', 'ул. Шипка 22', 'Bianchi Lei 400'],
+    ['05', 'Автогара Север', 'Автогара Север АД', 'пл. Възраждане 1', 'Necta Kikko Max'],
+    ['06', 'Цех Метал', 'Метал Инженеринг', 'ул. Индустриална 9', 'Saeco Cristallo 400'],
+    ['07', 'Офис Тракия', 'Тракия Консулт', 'бул. Тракия 45', 'Necta Kikko ES6'],
+    ['08', 'Университет — корпус 2', 'Студентски съвет', 'ул. Студентска 1', 'Bianchi Lei 700'],
+    ['09', 'Болнично фоайе', 'МБАЛ Св. Анна', 'ул. Здраве 3', 'Necta Opera'],
+    ['10', 'Бензиностанция Юг', 'Юг Петрол', 'път I-1, км 212', 'Saeco Cristallo 400'],
+    ['11', 'Хотел Панорама', 'Панорама Хотели', 'ул. Морска 17', 'Necta Kikko Max'],
+    ['12', 'Автокъща М-Кар', 'М-Кар Ауто', 'бул. Цар Симеон 80', 'Bianchi Lei 400']
+  ];
+  const machines = list.map((x, i) => ({ id: x[0], name: x[1], location: x[2], address: x[3], model: x[4],
+    fiscalNo: 'ZK' + (145230 + i * 7), fdNo: 'TR' + (4402100 + i * 13), price: [0.7, 0.8, 0.6][i % 3], status: i === 11 ? 'В склад' : 'Активен', notes: '',
+    days: ['Пн,Чт', 'Вт,Пт', 'Пн,Ср,Пт', 'Ср', 'Пн,Чт', 'Вт', 'Вт,Пт', 'Пн,Ср,Пт', 'Ср,Сб', 'Чт', '', 'Пн'][i] }));
+  const readings = [], refills = [], repairs = [];
+  const cur = new Date().toISOString().slice(0, 7);
+  const [y, m] = cur.split('-').map(Number);
+  const mo = k => { const d = new Date(Date.UTC(y, m - 1 - k, 1)); return d.toISOString().slice(0, 7); };
+  machines.forEach((mc, i) => {
+    if (mc.status !== 'Активен') return;
+    let counter = 20000 + Math.floor(rnd() * 60000);
+    readings.push({ id: nid(), date: mo(2) + '-28', machineId: mc.id, counter, prevCounter: counter, cups: 0, expected: 0, fiscal: '', collected: '', diff: '', user: 'Иван (техник)', note: 'Начален брояч' });
+    const months = i < 8 ? [1, 0] : [1];
+    months.forEach(k => {
+      const cups = 500 + Math.floor(rnd() * 1300);
+      const prev = counter; counter += cups;
+      const expected = r2(cups * mc.price);
+      const fiscal = r2(expected * (0.97 + rnd() * 0.05));
+      const short = rnd() < 0.25 ? r2(rnd() * 12 + 2) : 0;
+      const collected = r2(fiscal - short);
+      readings.push({ id: nid(), date: mo(k) + '-' + String(18 + Math.floor(rnd() * 8)).padStart(2, '0'), machineId: mc.id, counter, prevCounter: prev, cups, expected, fiscal, collected, diff: r2(collected - fiscal), user: rnd() < 0.8 ? 'Иван (техник)' : 'Администратор', note: short ? 'Липса в касата' : '' });
+      refills.push({ id: nid(), date: mo(k) + '-1' + Math.floor(rnd() * 9), machineId: mc.id, coffee: r2(cups * 0.007), sugar: r2(cups * 0.005), milk: r2(cups * 0.002), choco: r2(cups * 0.0015), cups: Math.ceil(cups / 100) * 100, stirrers: Math.ceil(cups / 100) * 100, user: 'Иван (техник)', note: '' });
+    });
+  });
+  // посещения по график за текущата седмица (до вчера), с няколко пропуснати
+  const DN = ['Пн', 'Вт', 'Ср', 'Чт', 'Пт', 'Сб', 'Нд'];
+  const now = new Date(); const ti = (now.getDay() + 6) % 7;
+  for (let k = 0; k < ti; k++) {
+    const d = new Date(now); d.setDate(d.getDate() - ti + k); d.setMinutes(d.getMinutes() - d.getTimezoneOffset());
+    const ds = d.toISOString().slice(0, 10);
+    machines.forEach(mc => {
+      if (mc.status !== 'Активен' || !mc.days.split(',').includes(DN[k])) return;
+      if (rnd() < 0.85) refills.push({ id: nid(), date: ds, machineId: mc.id, coffee: r2(1 + rnd() * 2), sugar: r2(0.5 + rnd()), milk: 0.5, choco: 0.3, cups: 200, stirrers: 200, user: 'Иван (техник)', note: '' });
+    });
+  }
+  repairs.push({ id: nid(), date: mo(1) + '-09', machineId: '03', problem: 'Не пуска чашки', action: 'Почистен и регулиран чашкодавач', parts: '', cost: '', status: 'Приключен', user: 'Иван (техник)', closedDate: mo(1) + '-09' });
+  repairs.push({ id: nid(), date: mo(0) + '-21', machineId: '09', problem: 'Грешка на монетника, връща монети от 1 €', action: '', parts: '', cost: '', status: 'Отворен', user: 'Иван (техник)', closedDate: '' });
+  repairs.push({ id: nid(), date: mo(0) + '-24', machineId: '05', problem: 'Тече вода под бойлера', action: '', parts: 'Уплътнение бойлер', cost: 18.5, status: 'Отворен', user: 'Администратор', closedDate: '' });
+  const users = [
+    { token: 'a1f93c0d7e2b4k18', name: 'Администратор', role: 'admin', active: 'да' },
+    { token: 'b7c22e91f04d6m35', name: 'Иван (техник)', role: 'tech', active: 'да' }
+  ];
+  return { machines, readings, refills, repairs, users };
+})();
+const findM = id => { const m = DB.machines.find(x => String(x.id) === String(id)); if (!m) throw new Error('Няма автомат №' + id); return m; };
+const MOCK = {
+  bootstrap(b, u) {
+    const last = {};
+    DB.readings.forEach(x => { const p = last[x.machineId]; if (!p || String(x.date) >= String(p.date)) last[x.machineId] = x; });
+    const from = new Date(Date.now() - 14 * 864e5).toISOString().slice(0, 10), visits = {};
+    DB.readings.concat(DB.refills, DB.repairs).forEach(x => { if (String(x.date) < from) return; const k = String(x.machineId); visits[k] = visits[k] || []; if (!visits[k].includes(x.date)) visits[k].push(x.date); });
+    return { user: { name: u.name, role: u.role }, machines: DB.machines.map(m => Object.assign({}, m, { last: last[m.id] || null, visits: visits[String(m.id)] || [] })), openRepairs: DB.repairs.filter(x => x.status !== 'Приключен') };
+  },
+  addReading(b, u) {
+    const m = findM(b.machineId); const counter = numv(b.counter);
+    const prevs = DB.readings.filter(x => String(x.machineId) === String(m.id)).sort((a, c) => String(a.date).localeCompare(String(c.date)));
+    const prev = prevs.length ? numv(prevs[prevs.length - 1].counter) : counter;
+    let cups;
+    if (counter < prev) { if (!b.force) throw new Error('Броячът (' + counter + ') е по-малък от предишния (' + prev + '). Ако е нулиран или сменен, отбележи квадратчето.'); cups = counter; }
+    else cups = counter - prev;
+    const expected = r2(cups * numv(m.price));
+    const fiscal = blankv(b.fiscal) ? '' : numv(b.fiscal), collected = blankv(b.collected) ? '' : numv(b.collected);
+    const diff = collected === '' ? '' : r2(collected - (fiscal !== '' ? fiscal : expected));
+    const rec = { id: nid(), date: b.date || todayStr(), machineId: m.id, counter, prevCounter: prev, cups, expected, fiscal, collected, diff, user: u.name, note: b.note || '' };
+    DB.readings.push(rec); return rec;
+  },
+  addRefill(b, u) {
+    const m = findM(b.machineId); const rec = { id: nid(), date: b.date || todayStr(), machineId: m.id, user: u.name, note: b.note || '' };
+    ['coffee', 'sugar', 'milk', 'choco', 'cups', 'stirrers'].forEach(k => rec[k] = blankv(b[k]) ? '' : numv(b[k]));
+    DB.refills.push(rec); return rec;
+  },
+  addRepair(b, u) {
+    const m = findM(b.machineId); if (!b.problem) throw new Error('Опиши проблема');
+    const done = b.status === 'Приключен';
+    const rec = { id: nid(), date: b.date || todayStr(), machineId: m.id, problem: b.problem, action: b.action || '', parts: b.parts || '', cost: blankv(b.cost) ? '' : numv(b.cost), status: done ? 'Приключен' : 'Отворен', user: u.name, closedDate: done ? todayStr() : '' };
+    DB.repairs.push(rec); return rec;
+  },
+  closeRepair(b) { const r = DB.repairs.find(x => x.id === b.id); if (!r) throw new Error('Няма такъв ремонт'); r.status = 'Приключен'; r.closedDate = todayStr(); return true; },
+  history(b) {
+    const f = arr => arr.filter(x => String(x.machineId) === String(b.machineId)).sort((a, c) => String(a.date).localeCompare(String(c.date))).slice(-15).reverse();
+    return { readings: f(DB.readings), refills: f(DB.refills), repairs: f(DB.repairs) };
+  },
+  report(b) {
+    const mo = b.month || todayStr().slice(0, 7); const inMo = x => String(x.date).slice(0, 7) === mo;
+    const rd = DB.readings.filter(inMo), rf = DB.refills.filter(inMo), rp = DB.repairs.filter(inMo);
+    return { month: mo, rows: DB.machines.map(m => {
+      const same = x => String(x.machineId) === String(m.id); const R = rd.filter(same), F = rf.filter(same), P = rp.filter(same);
+      const sum = (a, k) => r2(a.reduce((t, x) => t + numv(x[k]), 0));
+      return { id: m.id, name: m.name, location: m.location, readings: R.length, cups: sum(R, 'cups'), expected: sum(R, 'expected'), fiscal: sum(R, 'fiscal'), collected: sum(R, 'collected'), diff: sum(R, 'diff'), refills: F.length, coffee: sum(F, 'coffee'), repairs: P.length, repairCost: sum(P, 'cost') };
+    }) };
+  },
+  saveMachine(b, u) {
+    if (u.role !== 'admin') throw new Error('Само за администратор');
+    const m = b.machine; if (!m.id || !m.name) throw new Error('Номер и име са задължителни');
+    m.price = blankv(m.price) ? '' : numv(m.price); m.status = m.status || 'Активен';
+    const ex = DB.machines.find(x => String(x.id) === String(m.id));
+    if (ex) Object.assign(ex, m); else DB.machines.push(m); return true;
+  },
+  users(b, u) { if (u.role !== 'admin') throw new Error('Само за администратор'); return DB.users; },
+  addUser(b, u) { if (u.role !== 'admin') throw new Error('Само за администратор'); if (!b.name) throw new Error('Въведи име'); const t = Math.random().toString(36).slice(2, 10) + Math.random().toString(36).slice(2, 10); DB.users.push({ token: t, name: b.name, role: b.role === 'admin' ? 'admin' : 'tech', active: 'да' }); return { token: t }; }
+};
+async function setRole(role) {
+  USER.role = role; USER.name = role === 'admin' ? 'Администратор' : 'Иван (техник)';
+  document.getElementById('r_admin').className = role === 'admin' ? 'on' : '';
+  document.getElementById('r_tech').className = role === 'tech' ? 'on' : '';
+  S.users = null; S.report = null; await reload(); go('home');
+}
+
+let TOKEN = 'demo';
+const qs = new URLSearchParams('');
+const S = { view: 'home', data: null, sel: qs.get('m') || '', hist: null, report: null, users: null, tab: 'readings', q: '' };
+const MONTH = new Date().toISOString().slice(0, 7);
+const $ = id => document.getElementById(id);
+const esc = s => String(s == null ? '' : s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+const eur = n => (n === '' || n == null) ? '—' : Number(n).toFixed(2) + ' €';
+const today = () => { const d = new Date(); d.setMinutes(d.getMinutes() - d.getTimezoneOffset()); return d.toISOString().slice(0, 10); };
+
+async function api(action, data = {}) {
+  await new Promise(r => setTimeout(r, 120));
+  const fn = MOCK[action];
+  if (!fn) throw new Error('Непознато действие');
+  return JSON.parse(JSON.stringify(fn(JSON.parse(JSON.stringify(data)), USER)));
+}
+function toast(msg, err) { const t = $('toast'); t.textContent = msg; t.className = 'toast' + (err ? ' err' : ''); t.hidden = false; clearTimeout(t._h); t._h = setTimeout(() => t.hidden = true, 2800); }
+function go(view, extra) { Object.assign(S, extra || {}, { view }); render(); window.scrollTo(0, 0); }
+async function reload() { S.data = await api('bootstrap'); }
+
+const machines = () => S.data ? S.data.machines : [];
+const mById = id => machines().find(m => String(m.id) === String(id));
+const readThisMonth = m => m.last && String(m.last.date).slice(0, 7) === MONTH;
+const openRep = id => S.data.openRepairs.filter(r => String(r.machineId) === String(id)).length;
+
+/* ---------- График ---------- */
+const DAYS = ['Пн', 'Вт', 'Ср', 'Чт', 'Пт', 'Сб', 'Нд'];
+const DAYS_FULL = ['Понеделник', 'Вторник', 'Сряда', 'Четвъртък', 'Петък', 'Събота', 'Неделя'];
+const TODAY_I = (new Date().getDay() + 6) % 7;
+const daysOf = m => String(m.days || '').split(/[,;\s]+/).map(x => DAYS.findIndex(d => d.toLowerCase() === x.trim().toLowerCase().slice(0, 2))).filter(i => i >= 0);
+const daysText = m => daysOf(m).map(i => DAYS[i]).join(', ');
+const dateOfWeekday = i => { const d = new Date(); d.setDate(d.getDate() - TODAY_I + i); d.setMinutes(d.getMinutes() - d.getTimezoneOffset()); return d.toISOString().slice(0, 10); };
+const fmtDate = d => String(d).split('-').reverse().slice(0, 2).join('.');
+const active = m => m.status !== 'Неактивен' && m.status !== 'В склад';
+const onDay = i => machines().filter(m => active(m) && daysOf(m).includes(i));
+const visited = (m, date) => (m.visits || []).includes(date);
+
+function visitCard(m, date) {
+  const t = today();
+  let b;
+  if (visited(m, date)) b = '<span class="badge b-ok">Посетен</span>';
+  else if (date < t) b = '<span class="badge b-bad">Пропуснат</span>';
+  else if (date === t) b = '<span class="badge b-warn">За посещение</span>';
+  else b = '<span class="badge b-soft">Предстои</span>';
+  return `<div class="card mc" onclick="openMachine('${esc(m.id)}')"><div class="ic">☕</div>
+    <div class="t"><b>№${esc(m.id)} · ${esc(m.name)}</b><div class="mut">${esc(m.address || m.location || '')}</div><div class="mut">График: ${esc(daysText(m))}</div></div>${b}</div>`;
+}
+
+function header(title, back) {
+  const d = S.data;
+  let h = `<div class="top">${back ? `<button class="back" onclick="go('${back}')">‹</button>` : ''}<h1>${esc(title)}</h1>${d ? `<small>${esc(d.user.name)}</small>` : ''}</div>`;
+  if (!back && d) {
+    const tot = machines().filter(m => m.status !== 'Неактивен').length;
+    const done = machines().filter(readThisMonth).length;
+    h += `<div class="counters">
+      <div class="cnt"><b>${tot}</b><span>Автомати</span></div>
+      <div class="cnt"><b>${done}</b><span>Отчетени</span></div>
+      <div class="cnt"><b>${Math.max(tot - done, 0)}</b><span>Чакат отчет</span></div>
+      <div class="cnt"><b>${d.openRepairs.length}</b><span>Ремонти</span></div></div>`;
+  }
+  $('hdr').innerHTML = h;
+}
+
+function machineCard(m) {
+  let b;
+  if (openRep(m.id)) b = '<span class="badge b-bad">Ремонт</span>';
+  else if (readThisMonth(m)) b = '<span class="badge b-ok">Отчетен</span>';
+  else b = '<span class="badge b-warn">Чака отчет</span>';
+  const last = m.last ? `Брояч ${esc(m.last.counter)} · ${esc(m.last.date)}` : 'Няма отчет';
+  return `<div class="card mc" onclick="openMachine('${esc(m.id)}')"><div class="ic">☕</div>
+    <div class="t"><b>№${esc(m.id)} · ${esc(m.name)}</b><div class="mut">${esc(m.location || '')}${daysOf(m).length ? ' · ' + esc(daysText(m)) : ''}</div><div class="mut">${last}</div></div>${b}</div>`;
+}
+
+function machineSelect() {
+  return `<label>Автомат</label><select id="f_m" onchange="S.sel=this.value;render()"><option value="">— избери —</option>${
+    machines().filter(m => m.status !== 'Неактивен').map(m => `<option value="${esc(m.id)}" ${String(S.sel) === String(m.id) ? 'selected' : ''}>№${esc(m.id)} · ${esc(m.name)}${m.location ? ' — ' + esc(m.location) : ''}</option>`).join('')}</select>`;
+}
+
+const V = {
+  home() {
+    header('Вендинг Pro');
+    const tiles = [
+      ['📟', 'Отчет брояч', 'reading', 'var(--blue)'],
+      ['☕', 'Зареждане', 'refill', 'var(--brown)'],
+      ['🔧', 'Ремонт', 'repair', 'var(--bad)'],
+      ['📅', 'График', 'schedule', '#178a57'],
+      ['📊', 'Справка', 'report', 'var(--vio)'],
+      ['🏪', 'Автомати', 'machines', 'var(--teal)']
+    ];
+    const waiting = machines().filter(m => m.status !== 'Неактивен' && !readThisMonth(m));
+    let h = `<div class="tiles">${tiles.map(t => `<button class="tile" style="background:${t[3]}" onclick="go('${t[2]}')"><i>${t[0]}</i>${t[1]}</button>`).join('')}</div>`;
+    const todays = onDay(TODAY_I), td = today();
+    h += `<h2>Днес по график · ${DAYS_FULL[TODAY_I]} (${todays.filter(m => visited(m, td)).length}/${todays.length})</h2>`;
+    if (todays.length) h += todays.sort((a, b) => visited(a, td) - visited(b, td)).map(m => visitCard(m, td)).join('');
+    else { const n = (TODAY_I + 1) % 7; h += `<div class="card mut">Днес няма посещения по график. ${DAYS_FULL[n]}: ${onDay(n).length} автомата.</div>`; }
+    if (S.data.openRepairs.length) {
+      h += `<h2>Отворени ремонти</h2>` + S.data.openRepairs.map(r => {
+        const m = mById(r.machineId) || {};
+        return `<div class="card"><b>№${esc(r.machineId)} · ${esc(m.name || '')}</b><div class="mut">${esc(r.date)} — ${esc(r.problem)}</div>
+          <button class="btn sec" style="margin-top:10px;padding:10px" onclick="closeRepair('${esc(r.id)}')">✔ Приключи</button></div>`;
+      }).join('');
+    }
+    h += `<h2>Чакат отчет за ${MONTH} (${waiting.length})</h2>` + (waiting.map(machineCard).join('') || '<div class="card mut">Всички автомати са отчетени 👍</div>');
+    if (S.data.user.role === 'admin') h += `<button class="btn sec" onclick="go('users')">👥 Потребители и линкове</button>`;
+    return h;
+  },
+
+  schedule() {
+    header('График', 'home');
+    if (S.day == null) S.day = TODAY_I;
+    let h = `<div class="tabs days">${DAYS.map((d, i) => `<button class="${S.day === i ? 'on' : ''}${i === TODAY_I ? ' today' : ''}" onclick="S.day=${i};render()">${d}<small>${onDay(i).length}</small></button>`).join('')}</div>`;
+    const date = dateOfWeekday(S.day), L = onDay(S.day);
+    h += `<h2>${DAYS_FULL[S.day]}, ${fmtDate(date)} · посетени ${L.filter(m => visited(m, date)).length} от ${L.length}</h2>`;
+    h += L.map(m => visitCard(m, date)).join('') || '<div class="card mut">Няма автомати по график за този ден.</div>';
+    const none = machines().filter(m => active(m) && !daysOf(m).length);
+    if (none.length) h += `<h2>Без зададен график (${none.length})</h2>` + none.map(machineCard).join('');
+    h += `<div class="mut" style="margin-top:12px">Посещение се брои всеки отчет, зареждане или ремонт в съответния ден.${S.data.user.role === 'admin' ? ' Дните се задават от картата на автомата → Редактирай.' : ''}</div>`;
+    return h;
+  },
+
+  machines() {
+    header('Автомати', 'home');
+    const q = S.q.toLowerCase();
+    const list = machines().filter(m => !q || [m.id, m.name, m.location, m.address].join(' ').toLowerCase().includes(q));
+    let h = `<input class="search" placeholder="Търси по №, име, обект…" value="${esc(S.q)}" oninput="S.q=this.value;render();this.focus();this.setSelectionRange(this.value.length,this.value.length)">`;
+    if (S.data.user.role === 'admin') h += `<button class="btn" style="margin:0 0 12px" onclick="go('editMachine',{edit:null})">+ Нов автомат</button>`;
+    return h + (list.map(machineCard).join('') || '<div class="center">Няма автомати</div>');
+  },
+
+  machine() {
+    const m = mById(S.sel);
+    if (!m) return go('machines');
+    header('№' + m.id + ' · ' + m.name, 'machines');
+    let h = `<div class="card">
+      <div class="kv"><span>Обект</span><b>${esc(m.location)}</b></div>
+      <div class="kv"><span>Адрес</span><b>${esc(m.address)}</b></div>
+      <div class="kv"><span>Модел</span><b>${esc(m.model)}</b></div>
+      <div class="kv"><span>Фискален №</span><b>${esc(m.fiscalNo)}</b></div>
+      <div class="kv"><span>№ на ФУ</span><b>${esc(m.fdNo)}</b></div>
+      <div class="kv"><span>Ср. цена</span><b>${eur(m.price)}</b></div>
+      <div class="kv"><span>График</span><b>${esc(daysText(m)) || '—'}</b></div>
+      <div class="kv"><span>Последен брояч</span><b>${m.last ? esc(m.last.counter) + ' (' + esc(m.last.date) + ')' : '—'}</b></div></div>
+      <div class="tiles" style="grid-template-columns:repeat(3,1fr)">
+        <button class="tile" style="background:var(--blue)" onclick="go('reading')"><i>📟</i>Отчет</button>
+        <button class="tile" style="background:var(--brown)" onclick="go('refill')"><i>☕</i>Зареждане</button>
+        <button class="tile" style="background:var(--bad)" onclick="go('repair')"><i>🔧</i>Ремонт</button></div>`;
+    if (S.data.user.role === 'admin') h += `<button class="btn sec" style="margin:0 0 6px" onclick="go('editMachine',{edit:'${esc(m.id)}'})">✏️ Редактирай</button>
+      <div class="mut" style="margin-top:8px">Линк за QR стикер на автомата:</div><div class="link">${esc('https://mkarautoltd-boop.github.io/vending-pro/?m=' + encodeURIComponent(m.id))}</div>`;
+    h += `<div class="tabs">${[['readings', 'Отчети'], ['refills', 'Зареждания'], ['repairs', 'Ремонти']].map(t => `<button class="${S.tab === t[0] ? 'on' : ''}" onclick="S.tab='${t[0]}';render()">${t[1]}</button>`).join('')}</div>`;
+    if (!S.hist) return h + '<div class="center">Зареждане…</div>';
+    const L = S.hist[S.tab];
+    if (!L.length) return h + '<div class="card mut">Няма записи</div>';
+    return h + L.map(x => {
+      if (S.tab === 'readings') return `<div class="card"><b>${esc(x.date)} · брояч ${esc(x.counter)}</b><div class="mut">${esc(x.cups)} чаши · очаквано ${eur(x.expected)} · ФУ ${eur(x.fiscal)} · касирано ${eur(x.collected)}</div>${x.diff !== '' ? `<div class="mut">Разлика: <b style="color:${x.diff < 0 ? 'var(--bad)' : 'var(--ok)'}">${eur(x.diff)}</b></div>` : ''}<div class="mut">${esc(x.user)} ${esc(x.note)}</div></div>`;
+      if (S.tab === 'refills') return `<div class="card"><b>${esc(x.date)}</b><div class="mut">Кафе ${esc(x.coffee || 0)} кг · Захар ${esc(x.sugar || 0)} · Мляко ${esc(x.milk || 0)} · Шоколад ${esc(x.choco || 0)} · Чашки ${esc(x.cups || 0)}</div><div class="mut">${esc(x.user)} ${esc(x.note)}</div></div>`;
+      return `<div class="card"><b>${esc(x.date)} · ${esc(x.status)}</b><div class="mut">${esc(x.problem)}</div><div class="mut">${esc(x.action)} ${x.parts ? '· ' + esc(x.parts) : ''} ${x.cost !== '' ? '· ' + eur(x.cost) : ''}</div></div>`;
+    }).join('');
+  },
+
+  reading() {
+    header('Отчет брояч', 'home');
+    const m = mById(S.sel);
+    let h = machineSelect() + `<label>Дата</label><input type="date" id="f_date" value="${today()}">
+      <label>Показание на брояча</label><input id="f_counter" inputmode="numeric" oninput="calcReading()">
+      <div class="row"><div><label>Оборот по ФУ (€)</label><input id="f_fiscal" inputmode="decimal" oninput="calcReading()"></div>
+      <div><label>Касирано (€)</label><input id="f_collected" inputmode="decimal" oninput="calcReading()"></div></div>
+      <label class="chk"><input type="checkbox" id="f_force"> Броячът е нулиран или сменен</label>
+      <label>Бележка</label><textarea id="f_note"></textarea>
+      <div class="calc" id="calc">${m ? (m.last ? `Предишен брояч: <b>${esc(m.last.counter)}</b> (${esc(m.last.date)})` : 'Първи отчет — ще стане начален брояч') : 'Избери автомат'}</div>
+      <button class="btn" onclick="saveReading()">Запиши отчета</button>`;
+    return h;
+  },
+
+  refill() {
+    header('Зареждане', 'home');
+    const f = (id, l) => `<div><label>${l}</label><input id="${id}" inputmode="decimal"></div>`;
+    return machineSelect() + `<label>Дата</label><input type="date" id="f_date" value="${today()}">
+      <div class="row">${f('f_coffee', 'Кафе (кг)')}${f('f_sugar', 'Захар (кг)')}${f('f_milk', 'Мляко (кг)')}${f('f_choco', 'Шоколад (кг)')}${f('f_cups', 'Чашки (бр)')}${f('f_stirrers', 'Бъркалки (бр)')}</div>
+      <label>Бележка</label><textarea id="f_note"></textarea>
+      <button class="btn" style="background:var(--brown)" onclick="saveRefill()">Запиши зареждането</button>`;
+  },
+
+  repair() {
+    header('Ремонт', 'home');
+    return machineSelect() + `<label>Дата</label><input type="date" id="f_date" value="${today()}">
+      <label>Проблем</label><textarea id="f_problem" placeholder="напр. не пуска чашки, грешка E05…"></textarea>
+      <label>Извършено</label><textarea id="f_action"></textarea>
+      <div class="row"><div><label>Части</label><input id="f_parts"></div><div><label>Цена (€)</label><input id="f_cost" inputmode="decimal"></div></div>
+      <label>Статус</label><select id="f_status"><option>Отворен</option><option>Приключен</option></select>
+      <button class="btn" style="background:var(--bad)" onclick="saveRepair()">Запиши ремонта</button>`;
+  },
+
+  report() {
+    header('Справка', 'home');
+    let h = `<label>Месец</label><input type="month" id="f_month" value="${S.report ? S.report.month : MONTH}" onchange="loadReport(this.value)">`;
+    if (!S.report) { loadReport(MONTH); return h + '<div class="center">Зареждане…</div>'; }
+    const R = S.report.rows;
+    const T = k => R.reduce((a, x) => a + Number(x[k] || 0), 0);
+    h += `<div class="card"><div class="kv"><span>Отчетени автомати</span><b>${R.filter(x => x.readings).length} / ${R.length}</b></div>
+      <div class="kv"><span>Чаши общо</span><b>${T('cups')}</b></div>
+      <div class="kv"><span>Очаквано</span><b>${eur(T('expected'))}</b></div>
+      <div class="kv"><span>Оборот ФУ</span><b>${eur(T('fiscal'))}</b></div>
+      <div class="kv"><span>Касирано</span><b>${eur(T('collected'))}</b></div>
+      <div class="kv"><span>Разлика</span><b style="color:${T('diff') < 0 ? 'var(--bad)' : 'var(--ok)'}">${eur(T('diff'))}</b></div>
+      <div class="kv"><span>Кафе заредено</span><b>${T('coffee').toFixed(1)} кг</b></div>
+      <div class="kv"><span>Ремонти</span><b>${T('repairs')} · ${eur(T('repairCost'))}</b></div></div>
+      <button class="btn sec" style="margin:0 0 6px" onclick="exportCSV()">⬇ Свали за Excel (CSV)</button>
+      <h2>По автомати (по чаши)</h2>`;
+    h += R.slice().sort((a, b) => b.cups - a.cups).map(x => `<div class="card"><b>№${esc(x.id)} · ${esc(x.name)}</b><div class="mut">${esc(x.location || '')}</div>
+      <div class="mut">${x.cups} чаши · ФУ ${eur(x.fiscal)} · касирано ${eur(x.collected)}${x.readings ? '' : ' · <b style="color:var(--warn)">без отчет</b>'}</div>
+      ${x.diff ? `<div class="mut">Разлика: <b style="color:${x.diff < 0 ? 'var(--bad)' : 'var(--ok)'}">${eur(x.diff)}</b></div>` : ''}</div>`).join('');
+    return h;
+  },
+
+  editMachine() {
+    const m = S.edit ? mById(S.edit) : {};
+    header(S.edit ? 'Редакция №' + m.id : 'Нов автомат', 'machines');
+    const f = (k, l, t) => `<label>${l}</label><input id="m_${k}" value="${esc(m[k] || '')}" ${t || ''}>`;
+    return f('id', 'Номер (напр. 01, A12)', S.edit ? 'readonly' : '') + f('name', 'Име') + f('location', 'Обект (фирма/място)') + f('address', 'Адрес') + f('model', 'Модел') +
+      `<div class="row"><div>${f('fiscalNo', 'Фискален №')}</div><div>${f('fdNo', '№ на ФУ (Tremol)')}</div></div>` +
+      f('price', 'Средна цена на чаша (€)', 'inputmode="decimal"') +
+      `<label>Статус</label><select id="m_status">${['Активен', 'Неактивен', 'В склад'].map(s => `<option ${m.status === s ? 'selected' : ''}>${s}</option>`).join('')}</select>` +
+      `<label>Дни за посещение</label><div class="daypick">${DAYS.map((d, i) => `<label class="chk"><input type="checkbox" id="m_d${i}" ${daysOf(m).includes(i) ? 'checked' : ''}>${d}</label>`).join('')}</div>` +
+      f('notes', 'Бележки') + `<button class="btn" style="background:var(--teal)" onclick="saveMachine()">Запиши</button>`;
+  },
+
+  users() {
+    header('Потребители', 'home');
+    if (!S.users) { api('users').then(u => { S.users = u; render(); }).catch(e => toast(e.message, 1)); return '<div class="center">Зареждане…</div>'; }
+    const base = 'https://mkarautoltd-boop.github.io/vending-pro/?t=';
+    return `<div class="card"><label style="margin-top:0">Нов потребител</label><input id="u_name" placeholder="Име">
+      <select id="u_role" style="margin-top:8px"><option value="tech">Техник</option><option value="admin">Администратор</option></select>
+      <button class="btn" onclick="addUser()">Създай линк</button></div>` +
+      S.users.map(u => `<div class="card"><b>${esc(u.name)}</b> <span class="mut">(${u.role === 'admin' ? 'администратор' : 'техник'}${String(u.active).toLowerCase() === 'не' ? ', деактивиран' : ''})</span>
+        <div class="link">${esc(base + u.token)}</div><button class="btn sec" style="padding:10px;margin-top:8px" onclick="copy('${esc(base + u.token)}')">Копирай линка</button></div>`).join('') +
+      '<div class="mut">За да спреш достъп — в лист „Потребители“ сложи „не“ в колона „Активен“.</div>';
+  }
+};
+
+function render() {
+  if (!TOKEN) { $('hdr').innerHTML = '<div class="top"><h1>Вендинг Pro</h1></div>'; $('app').innerHTML = '<div class="center">Отвори приложението чрез личния си линк за достъп.</div>'; return; }
+  if (!S.data) return;
+  const h = V[S.view]();
+  if (typeof h === 'string') $('app').innerHTML = h;
+}
+
+/* ---------- Действия ---------- */
+const val = id => { const e = $(id); return e ? e.value.trim() : ''; };
+const need = () => { if (!S.sel) { toast('Избери автомат', 1); return false; } return true; };
+async function busy(fn) { const b = document.querySelector('.btn'); try { if (b) b.disabled = true; await fn(); } catch (e) { toast(e.message, 1); } finally { if (b) b.disabled = false; } }
+
+async function openMachine(id) { S.sel = id; S.hist = null; S.tab = 'readings'; go('machine'); try { S.hist = await api('history', { machineId: id }); if (S.view === 'machine') render(); } catch (e) { toast(e.message, 1); } }
+
+function calcReading() {
+  const m = mById(S.sel); if (!m) return;
+  const c = parseFloat(val('f_counter').replace(',', '.'));
+  const prev = m.last ? Number(m.last.counter) : null;
+  let h = prev != null ? `Предишен брояч: <b>${prev}</b> (${esc(m.last.date)})` : 'Първи отчет — ще стане начален брояч';
+  if (!isNaN(c) && prev != null) {
+    const cups = c - prev;
+    if (cups < 0) h += `<br><b style="color:var(--bad)">Броячът е по-малък от предишния!</b>`;
+    else {
+      const exp = cups * Number(m.price || 0);
+      h += `<br>Чаши: <b>${cups}</b> · Очаквано: <b>${eur(exp)}</b>`;
+      const col = parseFloat(val('f_collected').replace(',', '.')), fis = parseFloat(val('f_fiscal').replace(',', '.'));
+      if (!isNaN(col)) { const d = col - (isNaN(fis) ? exp : fis); h += `<br>Разлика: <b style="color:${d < 0 ? 'var(--bad)' : 'var(--ok)'}">${eur(d)}</b>`; }
+    }
+  }
+  $('calc').innerHTML = h;
+}
+
+function saveReading() {
+  if (!need()) return; if (!val('f_counter')) return toast('Въведи брояча', 1);
+  const data = { machineId: S.sel, date: val('f_date'), counter: val('f_counter'), fiscal: val('f_fiscal'), collected: val('f_collected'), note: val('f_note') };
+  busy(async () => {
+    data.force = $('f_force').checked;
+    await api('addReading', data);
+    await reload(); toast('Отчетът е записан ✔'); go('home');
+  });
+}
+function saveRefill() {
+  if (!need()) return;
+  const d = { machineId: S.sel, date: val('f_date'), note: val('f_note') };
+  ['coffee', 'sugar', 'milk', 'choco', 'cups', 'stirrers'].forEach(k => d[k] = val('f_' + k));
+  busy(async () => { await api('addRefill', d); await reload(); toast('Зареждането е записано ✔'); go('home'); });
+}
+function saveRepair() {
+  if (!need()) return; if (!val('f_problem')) return toast('Опиши проблема', 1);
+  busy(async () => { await api('addRepair', { machineId: S.sel, date: val('f_date'), problem: val('f_problem'), action: val('f_action'), parts: val('f_parts'), cost: val('f_cost'), status: val('f_status') }); await reload(); toast('Ремонтът е записан ✔'); go('home'); });
+}
+async function closeRepair(id) {
+  try { await api('closeRepair', { id }); await reload(); toast('Ремонтът е приключен ✔'); render(); } catch (e) { toast(e.message, 1); }
+}
+async function loadReport(mo) { try { S.report = await api('report', { month: mo }); if (S.view === 'report') render(); } catch (e) { toast(e.message, 1); } }
+function saveMachine() {
+  const m = {}; ['id', 'name', 'location', 'address', 'model', 'fiscalNo', 'fdNo', 'price', 'status', 'notes'].forEach(k => m[k] = val('m_' + k));
+  m.days = DAYS.filter((d, i) => $('m_d' + i).checked).join(',');
+  busy(async () => { await api('saveMachine', { machine: m }); await reload(); toast('Записано ✔'); S.sel = m.id; openMachine(m.id); });
+}
+function addUser() {
+  if (!val('u_name')) return toast('Въведи име', 1);
+  busy(async () => { await api('addUser', { name: val('u_name'), role: val('u_role') }); S.users = null; toast('Потребителят е създаден ✔'); render(); });
+}
+function copy(t) { try { navigator.clipboard.writeText(t).then(() => toast('Копирано ✔')).catch(() => toast('Копирането не е разрешено тук', 1)); } catch (e) { toast('Копирането не е разрешено тук', 1); } }
+function exportCSV() {
+  const R = S.report.rows, cols = ['id', 'name', 'location', 'readings', 'cups', 'expected', 'fiscal', 'collected', 'diff', 'refills', 'coffee', 'repairs', 'repairCost'];
+  const head = ['№', 'Име', 'Обект', 'Отчети', 'Чаши', 'Очаквано', 'Оборот ФУ', 'Касирано', 'Разлика', 'Зареждания', 'Кафе кг', 'Ремонти', 'Ремонти €'];
+  const csv = '\ufeff' + [head].concat(R.map(x => cols.map(c => x[c]))).map(r => r.map(v => '"' + String(v == null ? '' : v).replace(/"/g, '""') + '"').join(';')).join('\n');
+  toast('В истинското приложение тук се сваля CSV файл за Excel');
+}
+
+/* ---------- Старт ---------- */
+(async () => {
+  if (!TOKEN) return render();
+  try {
+    await reload();
+    if (qs.get('m') && mById(qs.get('m'))) openMachine(qs.get('m')); else render();
+  } catch (e) {
+    $('hdr').innerHTML = '<div class="top"><h1>Вендинг Pro</h1></div>';
+    $('app').innerHTML = `<div class="center">⚠️ ${esc(e.message)}</div>`;
+  }
+})();
+</script>
+
+</body>
+</html>

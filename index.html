@@ -334,9 +334,10 @@ let TOKEN = qs.get('t') || (() => { try { return localStorage.getItem('vp_token'
 const APP_URL = location.origin + location.pathname;
 
 async function api(action, data = {}) {
-  const r = await fetch(API_URL, { method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' }, body: JSON.stringify(Object.assign({ action, token: TOKEN }, data)) });
+  const r = await fetch(API_URL, { method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' }, body: JSON.stringify(Object.assign({ action, token: TOKEN, boot: action === 'bootstrap' ? 0 : 1 }, data)) });
   const j = await r.json();
   if (!j.ok) throw new Error(j.error);
+  if (j.boot) { S.data = j.boot; S.freshAt = Date.now(); }
   return j.data;
 }
 
@@ -462,7 +463,7 @@ function go(view, extra) {
   if (!['visit', 'reading', 'take', 'refill'].includes(view)) S.fromVisit = null;
   Object.assign(S, extra || {}, { view }); render(); window.scrollTo(0, 0);
 }
-async function reload() { S.data = await api('bootstrap'); }
+async function reload() { if (S.freshAt && Date.now() - S.freshAt < 4000) { S.freshAt = 0; return; } S.data = await api('bootstrap'); }
 const can = (...ps) => !!S.data && ps.some(p => (S.data.user.perms || []).includes(p));
 const isDesk = () => window.matchMedia('(min-width:980px)').matches;
 
@@ -1461,7 +1462,7 @@ async function busy(fn) {
   try { await fn(); } catch (e) { toast(e.message, 1); }
   finally { S.busy = false; document.querySelectorAll('button').forEach(b => b.disabled = false); }
 }
-function done(msg, view, extra) { return async () => { await reload(); S.report = null; S.fin = null; S.sales = null; toast(msg); if (view === 'machine') return openMachine(S.sel); go(view || 'home', extra); }; }
+function done(msg, view, extra) { return async () => { await reload(); S.report = null; S.fin = null; S.sales = null; toast(msg); if (view === 'machine') { setTimeout(() => openMachine(S.sel)); return; } go(view || 'home', extra); }; }
 function step(id, d) { const e = $(id); const v = Math.max(0, (parseFloat(String(e.value).replace(',', '.')) || 0) + d); e.value = Math.round(v * 100) / 100; }
 async function openMachine(id) { S.sel = id; S.hist = null; S.tab = 'status'; go('machine'); try { S.hist = await api('history', { machineId: id }); if (S.view === 'machine') render(); } catch (e) { toast(e.message, 1); } }
 
@@ -1607,7 +1608,7 @@ function saveMachine() {
   const m = {}; ['id', 'name', 'location', 'address', 'area', 'model', 'fiscalNo', 'fdNo', 'price', 'status', 'heater', 'bulb', 'lat', 'lng', 'notes', 'weekly'].forEach(k => m[k] = val('m_' + k));
   if (m.weekly === 'не') m.weekly = '';
   m.days = DAYS.filter((d, i) => $('m_d' + i).checked).join(',');
-  busy(async () => { await api('saveMachine', { machine: m }); await reload(); toast('Записано ✔'); openMachine(m.id); });
+  busy(async () => { await api('saveMachine', { machine: m }); await reload(); toast('Записано ✔'); setTimeout(() => openMachine(m.id)); });
 }
 const curAreas = () => S.areaDraft || String(((S.users && S.users.users.find(x => x.token === S.editUser)) || {}).areas || '').split(',').map(x => x.trim()).filter(Boolean);
 function pickRole(r) { S.roleDraft = r; if (r !== 'custom' && S.users.presets[r]) S.permDraft = S.users.presets[r].slice(); render(); }

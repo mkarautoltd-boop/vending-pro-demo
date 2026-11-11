@@ -329,14 +329,18 @@ const API_URL = 'https://script.google.com/macros/s/AKfycbwogjOxy3vf4Aht9qInPNst
 /* ========================================================================== */
 
 const qs = new URLSearchParams(location.search);
-if (qs.get('t')) { try { localStorage.setItem('vp_token', qs.get('t')); } catch (e) {} }
-let TOKEN = qs.get('t') || (() => { try { return localStorage.getItem('vp_token'); } catch (e) { return null; } })();
+const stored = (() => { try { return localStorage.getItem('vp_token'); } catch (e) { return null; } })();
+// Запазеното влизане е с предимство; стар линк с ?t= се ползва само ако няма нищо запазено
+let TOKEN = stored || (stored === null ? qs.get('t') : '') || '';
+if (TOKEN && TOKEN !== stored) { try { localStorage.setItem('vp_token', TOKEN); } catch (e) {} }
+if (qs.get('t')) { try { history.replaceState(null, '', location.pathname + (qs.get('m') ? '?m=' + encodeURIComponent(qs.get('m')) : '')); } catch (e) {} }
+function setToken(t) { TOKEN = t || ''; try { localStorage.setItem('vp_token', TOKEN); } catch (e) {} }
 const APP_URL = location.origin + location.pathname;
 
 async function api(action, data = {}) {
   const r = await fetch(API_URL, { method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' }, body: JSON.stringify(Object.assign({ action, token: TOKEN, boot: action === 'bootstrap' ? 0 : 1 }, data)) });
   const j = await r.json();
-  if (!j.ok) throw new Error(j.error);
+  if (!j.ok) { if (/Сесията е изтекла|Влез с потребител/.test(j.error) && action !== 'login') { setToken(''); S.data = null; render(); } throw new Error(j.error); }
   if (j.boot) { S.data = j.boot; S.freshAt = Date.now(); }
   return j.data;
 }
@@ -377,6 +381,8 @@ const IC = {
   back: '<path d="M19 12H5"/><path d="m12 19-7-7 7-7"/>',
   left: '<path d="m15 18-6-6 6-6"/>',
   right: '<path d="m9 18 6-6-6-6"/>',
+  x: '<path d="M18 6 6 18M6 6l12 12"/>',
+  logout: '<path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><path d="m16 17 5-5-5-5"/><path d="M21 12H9"/>',
   down: '<path d="m6 9 6 6 6-6"/>',
   search: '<circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/>',
   dl: '<path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="m7 10 5 5 5-5"/><path d="M12 15V3"/>',
@@ -828,12 +834,11 @@ const V = {
   dash() { header('Табло', 'home'); return dashboard(); },
 
   machines() {
-    header('Автомати', isDesk() ? '' : '-', `<button class="ibtn plain" aria-label="Търсене" onclick="S.showQ=!S.showQ;render()">${ico('search')}</button>`);
-    const q = S.q.toLowerCase(), all = machines();
+    header('Автомати', isDesk() ? '' : '-');
+    const all = machines();
     const F = { all, active: all.filter(m => mState(m)[0] === 'ok'), prob: all.filter(m => ['bad', 'warn'].includes(mState(m)[0])), today: onDay(TODAY_I) };
     if (S.mfilter === 'week') return machinesHead(F) + weekView();
-    const list = F[S.mfilter].filter(m => !q || [m.id, m.name, m.location, m.address, m.area].join(' ').toLowerCase().includes(q));
-    return machinesHead(F) + `<div class="grid g2e">${list.map(m => S.mfilter === 'today' ? visitRow(m, today()) : machineRow(m)).join('') || '<div class="center">Няма автомати</div>'}</div>`;
+    return machinesHead(F) + `<div class="grid g2e" id="mlist">${machineList(F)}</div>`;
   },
 
   map() {
@@ -1159,17 +1164,19 @@ const V = {
   users() {
     header('Потребители', isDesk() ? '' : 'home');
     if (!S.users) { api('users').then(u => { S.users = u; render(); }).catch(e => toast(e.message, 1)); return '<div class="center">Зареждане…</div>'; }
-    const U = S.users, base = APP_URL + '?t=';
+    const U = S.users;
     const RD = [['admin', 'crown', 'Пълен достъп'], ['manager', 'wrench', 'Автомати, зареждане и сервиз'], ['stock', 'box', 'Склад и доставки'], ['cash', 'cash', 'Броене на касите'], ['custom', 'gear', 'Права по избор']];
-    let h = `<div class="grid g2e" style="align-items:start"><div>${RD.map(r => { const n = U.users.filter(u => u.role === r[0]).length; return n || r[0] !== 'custom' ? `<div class="role ${S.roleF === r[0] ? 'on' : ''}" onclick="S.roleF=S.roleF==='${r[0]}'?'':'${r[0]}';render()">${ico(r[1])}<div><b>${esc(U.roles[r[0]])}</b><small>${r[2]} · ${n} ${n === 1 ? 'човек' : 'души'}</small></div>${ico('right', 'chev')}</div>` : ''; }).join('')}
+    let h = S.cred ? `<div class="card" style="border-color:var(--gold)"><h3>${ico('checkc')}Данни за вход — ${esc(S.cred.name)}</h3><div class="kv"><span>Адрес</span><b>${esc(APP_URL)}</b></div><div class="kv"><span>Потребител</span><b>${esc(S.cred.login)}</b></div><div class="kv"><span>Парола</span><b>${esc(S.cred.password)}</b></div>
+      <div class="dim" style="margin:8px 0">Паролата се вижда само сега. Изпрати я на служителя.</div><div class="sbtns"><button class="sbtn go" onclick="sendCred()">${ico('nav')}Изпрати</button><button class="sbtn" onclick="copy(credText())">Копирай</button><button class="sbtn" onclick="S.cred=null;render()">Скрий</button></div></div>` : '';
+    h += `<div class="grid g2e" style="align-items:start"><div>${RD.map(r => { const n = U.users.filter(u => u.role === r[0]).length; return n || r[0] !== 'custom' ? `<div class="role ${S.roleF === r[0] ? 'on' : ''}" onclick="S.roleF=S.roleF==='${r[0]}'?'':'${r[0]}';render()">${ico(r[1])}<div><b>${esc(U.roles[r[0]])}</b><small>${r[2]} · ${n} ${n === 1 ? 'човек' : 'души'}</small></div>${ico('right', 'chev')}</div>` : ''; }).join('')}
       <button class="btn" onclick="go('editUser',{editUser:null})">${ico('plus')}Нов служител</button></div><div>`;
     const L = U.users.filter(u => !S.roleF || u.role === S.roleF);
     h += `<h2 style="margin-top:0">${S.roleF ? esc(U.roles[S.roleF]) : 'Всички служители'} (${L.length})</h2>` + L.map(u => {
       const off = String(u.active).toLowerCase() === 'не';
       return `<div class="card"><div style="display:flex;gap:12px;align-items:center"><div class="av">${esc(initials(u.name))}</div><div style="flex:1;min-width:0"><b>${esc(u.name)}</b><div class="mut">${esc(U.roles[u.role] || u.role)}${u.areas ? ' · ' + esc(u.areas) : ''}</div></div><span class="pill ${off ? 'p-soft' : 'p-ok'}">${off ? 'Спрян' : 'Активен'}</span></div>
         <div class="dim" style="margin-top:10px;line-height:1.5">${u.role === 'admin' ? 'Пълен достъп' : U.perms.filter(p => u.perms.includes(p[0])).map(p => esc(p[1])).join(' · ')}</div>
-        <div class="link">${esc(base + u.token)}</div>
-        <div class="sbtns"><button class="sbtn go" onclick="sendLink('${esc(u.name)}','${esc(base + u.token)}')">${ico('nav')}Изпрати линка</button><button class="sbtn" onclick="copy('${esc(base + u.token)}')">Копирай</button><button class="sbtn" onclick="go('editUser',{editUser:'${esc(u.token)}'})">${ico('pencil')}Права</button></div></div>`;
+        <div class="kv" style="margin-top:8px"><span>Потребител</span>${u.login ? `<b>${esc(u.login)}</b>` : '<span class="pill p-warn">няма — задай потребител и парола</span>'}</div>
+        <div class="sbtns"><button class="sbtn ${u.login ? '' : 'go'}" onclick="go('editUser',{editUser:'${esc(u.token)}'})">${ico('pencil')}Редакция</button></div></div>`;
     }).join('');
     return h + '</div></div>';
   },
@@ -1181,6 +1188,9 @@ const V = {
     header(S.editUser ? u.name : 'Нов служител', 'users');
     const P = S.permDraft || u.perms, role = S.roleDraft || u.role, A = curAreas();
     return `<div class="form"><label for="u_name">Име</label><input id="u_name" value="${esc(S.nameDraft != null ? S.nameDraft : u.name)}" oninput="S.nameDraft=this.value">
+      <div class="g2"><div><label for="u_login">Потребител</label><input id="u_login" autocapitalize="none" autocorrect="off" spellcheck="false" autocomplete="off" value="${esc(S.loginDraft != null ? S.loginDraft : (u.login || ''))}" oninput="S.loginDraft=this.value" placeholder="напр. ivan"></div>
+      <div><label for="u_pass">Парола</label><div style="display:flex;gap:6px"><input id="u_pass" autocomplete="new-password" autocapitalize="none" value="${esc(S.passDraft || '')}" oninput="S.passDraft=this.value" placeholder="${u.hasPass ? 'празно = без промяна' : 'поне 4 знака'}"><button class="ibtn" type="button" title="Генерирай" onclick="S.passDraft=genPass();$('u_pass').value=S.passDraft">${ico('gear')}</button></div></div></div>
+      ${u.hasPass ? '<div class="dim" style="margin-top:6px">Нова парола изкарва служителя от всички устройства — ще трябва да влезе пак.</div>' : ''}
       <label for="u_role">Роля</label><select id="u_role" onchange="pickRole(this.value)">${Object.keys(U.roles).map(r => `<option value="${r}" ${role === r ? 'selected' : ''}>${esc(U.roles[r])}</option>`).join('')}</select>
       <div class="dim" style="margin-top:6px">Ролята отбелязва правата наготово. Ако промениш отделно право, ролята става „По избор“.</div>
       ${role !== 'admin' && U.areas.length ? `<label>Райони <span class="dim">(нищо избрано = всички автомати)</span></label><div class="chips">${U.areas.map(a => `<button class="chip ${A.includes(a) ? 'on' : ''}" onclick="toggleArea('${esc(a)}')">${esc(a)}</button>`).join('')}</div>` : ''}
@@ -1266,14 +1276,27 @@ const V = {
       <div class="card"><h3>${ico('checkc')}Достъп</h3>${full ? '<div class="mut">Пълен достъп до всичко.</div>' : navItems().map(n => `<div class="kv"><span style="display:flex;gap:10px;align-items:center;color:var(--txt)">${fico(n[2])}${n[1]}</span><span class="pill p-ok"><i class="d"></i>достъп</span></div>`).join('')}</div>
       ${can('machines_edit', 'users', 'stock_admin') ? `<button class="btn sec" onclick="go('settings')">${ico('gear')}Настройки</button>` : ''}
       ${wantsPush() ? `<button class="btn sec" style="margin-top:10px" onclick="go('pushHelp')">${ico('bell')}Как да включа известията</button>` : ''}
-      <div class="dim" style="margin-top:12px;text-align:center">Влизаш с личния си линк. Не го споделяй.</div></div>`;
+      ${u.hasPass ? '' : `<div class="card" style="border-color:var(--gold)"><b>Задай си потребител и парола</b><div class="dim" style="margin:6px 0 10px">Без тях няма да можеш да влезеш от друго устройство.</div><button class="btn" onclick="go('pass')">${ico('pencil')}Задай</button></div>`}
+      <div class="sbtns" style="margin-top:10px">${u.hasPass ? `<button class="sbtn" onclick="go('pass')">${ico('pencil')}Смени паролата</button>` : ''}<button class="sbtn" onclick="logout()">${ico('logout')}Изход</button></div>
+      ${u.login ? `<div class="dim" style="margin-top:12px;text-align:center">Потребител: <b>${esc(u.login)}</b></div>` : ''}</div>`;
+  },
+
+  pass() {
+    header(S.data.user.hasPass ? 'Смяна на паролата' : 'Потребител и парола', 'profile');
+    const u = S.data.user;
+    return `<div class="card form" style="max-width:420px">${u.login ? `<div class="kv"><span>Потребител</span><b>${esc(u.login)}</b></div>` : `<label for="p_login">Потребител</label><input id="p_login" autocapitalize="none" autocorrect="off" spellcheck="false" placeholder="напр. admin">`}
+      ${u.hasPass ? '<label for="p_old">Сегашна парола</label><input id="p_old" type="password" autocomplete="current-password">' : ''}
+      <label for="p_new">Нова парола</label><input id="p_new" type="password" autocomplete="new-password">
+      <label for="p_rep">Повтори новата парола</label><input id="p_rep" type="password" autocomplete="new-password">
+      <div class="dim" style="margin-top:6px">Другите ти устройства ще трябва да влязат отново.</div>
+      <button class="btn" onclick="savePass()">${ico('check')}Запиши</button></div>`;
   },
 
   pushHelp() {
     header('Известия на телефона', 'home');
     return `<div class="card form"><h3>${ico('bell')}${isIOS ? 'iPhone' : 'Android'}</h3>${isIOS
-      ? `<ol style="padding-left:20px;line-height:1.8;margin:0"><li>Отвори личния си линк в <b>Safari</b>.</li><li>Натисни <b>Сподели</b> (квадрат със стрелка нагоре).</li><li>Избери <b>„Добави към началния екран“</b> → <b>Добави</b>.</li><li>Отвори <b>CoffeeVend</b> от иконата.</li><li>Натисни <b>„Включи известия“</b> → <b>Разреши</b>.</li></ol><div class="dim" style="margin-top:10px">Нужен е iOS 16.4 или по-нов.</div>`
-      : `<ol style="padding-left:20px;line-height:1.8;margin:0"><li>Отвори личния си линк в <b>Chrome</b>.</li><li>Натисни <b>„Включи известия“</b> → <b>Разреши</b>.</li><li>По желание: ⋮ → <b>„Добавяне към началния екран“</b>.</li></ol><div class="dim" style="margin-top:10px">Ако си натиснал „Блокиране“: ⋮ → Настройки → Настройки на сайта → Известия.</div>`}</div>`;
+      ? `<ol style="padding-left:20px;line-height:1.8;margin:0"><li>Отвори <b>${esc(APP_URL)}</b> в <b>Safari</b> и влез.</li><li>Натисни <b>Сподели</b> (квадрат със стрелка нагоре).</li><li>Избери <b>„Добави към началния екран“</b> → <b>Добави</b>.</li><li>Отвори <b>CoffeeVend</b> от иконата.</li><li>Натисни <b>„Включи известия“</b> → <b>Разреши</b>.</li></ol><div class="dim" style="margin-top:10px">Нужен е iOS 16.4 или по-нов.</div>`
+      : `<ol style="padding-left:20px;line-height:1.8;margin:0"><li>Отвори <b>${esc(APP_URL)}</b> в <b>Chrome</b> и влез.</li><li>Натисни <b>„Включи известия“</b> → <b>Разреши</b>.</li><li>По желание: ⋮ → <b>„Добавяне към началния екран“</b>.</li></ol><div class="dim" style="margin-top:10px">Ако си натиснал „Блокиране“: ⋮ → Настройки → Настройки на сайта → Известия.</div>`}</div>`;
   }
 };
 
@@ -1324,10 +1347,22 @@ function phoneSummary() {
   return h;
 }
 
+const mText = m => [m.id, '№' + m.id, m.name, m.location, m.address, m.area, m.model, m.fiscalNo, m.fdNo, m.notes].join(' ').toLowerCase();
+function machineList(F) {
+  const W = S.q.toLowerCase().split(/\s+/).filter(Boolean);
+  const list = F[S.mfilter].filter(m => { const t = mText(m); return W.every(w => t.includes(w)); });
+  return list.map(m => S.mfilter === 'today' ? visitRow(m, today()) : machineRow(m)).join('') || `<div class="center">${S.q ? 'Нищо не е намерено за „' + esc(S.q) + '“' : 'Няма автомати'}</div>`;
+}
+function searchM(v) {
+  S.q = v; const all = machines();
+  const F = { all, active: all.filter(m => mState(m)[0] === 'ok'), prob: all.filter(m => ['bad', 'warn'].includes(mState(m)[0])), today: onDay(TODAY_I) };
+  const el = $('mlist'); if (el) el.innerHTML = machineList(F);
+  const x = $('q_x'); if (x) x.style.display = v ? '' : 'none';
+}
 function machinesHead(F) {
   const ch = [['all', 'Всички', F.all.length], ['active', 'Активни', F.active.length], ['prob', 'Проблеми', F.prob.length]];
   if (can('schedule')) ch.push(['today', 'Днес', F.today.length]);
-  return `${S.showQ || S.q ? `<div style="position:relative;margin-bottom:12px"><input id="f_q" placeholder="Търсене…" value="${esc(S.q)}" style="padding-left:42px;border-radius:999px" oninput="S.q=this.value;render();const e=$('f_q');e.focus();e.setSelectionRange(e.value.length,e.value.length)" aria-label="Търсене"><span style="position:absolute;left:15px;top:13px;color:var(--mut)">${ico('search')}</span></div>` : ''}
+  return `${S.mfilter === 'week' ? '' : `<div style="position:relative;margin-bottom:12px"><input id="f_q" type="text" inputmode="search" enterkeyhint="search" autocomplete="off" placeholder="Търси по №, име, адрес, район, ФУ…" value="${esc(S.q)}" style="padding-left:42px;padding-right:42px;border-radius:999px" oninput="searchM(this.value)" aria-label="Търсене на автомат"><span style="position:absolute;left:15px;top:13px;color:var(--mut)">${ico('search')}</span><button id="q_x" class="ibtn plain" aria-label="Изчисти" style="position:absolute;right:4px;top:4px;${S.q ? '' : 'display:none'}" onclick="$('f_q').value='';searchM('')">${ico('x')}</button></div>`}
     <div style="display:flex;gap:8px;align-items:center;margin-bottom:14px"><div class="chips" style="flex:1">${ch.map(c => `<button class="chip ${S.mfilter === c[0] ? 'on' : ''}" onclick="S.mfilter='${c[0]}';render()">${c[1]}${c[2] !== '' ? ' (' + c[2] + ')' : ''}</button>`).join('')}</div>
     ${can('machines_edit') ? `<button class="sbtn go" onclick="go('editMachine',{edit:null})">${ico('plus')}Нов</button>` : ''}</div>`;
 }
@@ -1438,8 +1473,37 @@ function geoHere() {
     () => toast('Няма достъп до местоположението — разреши го в браузъра', 1), { enableHighAccuracy: true, timeout: 15000 });
 }
 
+function loginScreen() {
+  document.body.classList.add('photo'); document.body.classList.remove('beans');
+  let pb = document.querySelector('.photo-bg'); if (!pb) { pb = document.createElement('div'); document.body.prepend(pb); }
+  pb.className = 'photo-bg cup'; pb.style.setProperty('--bgimg', 'url(' + IMG.cup + ')');
+  $('hdr').innerHTML = `<div class="brand"><div class="logo">${ico('logo')}</div><div><b>CoffeeVend</b><small>Вендинг управление</small></div></div>`;
+  $('tabbar').innerHTML = ''; $('side').innerHTML = '';
+  $('app').innerHTML = `<form class="card form" style="max-width:380px;margin:12vh auto 0" onsubmit="doLogin();return false">
+    <h2 style="margin-top:0">Вход</h2>
+    <label for="l_user">Потребител</label><input id="l_user" autocomplete="username" autocapitalize="none" autocorrect="off" spellcheck="false">
+    <label for="l_pass">Парола</label><input id="l_pass" type="password" autocomplete="current-password">
+    <button class="btn" type="submit" style="margin-top:16px">${ico('check')}Влез</button>
+    <div class="dim" style="margin-top:12px;text-align:center">Забравена парола? Обади се на администратора.</div></form>`;
+}
+function doLogin() {
+  const login = val('l_user'), password = $('l_pass').value;
+  if (!login || !password) return toast('Въведи потребител и парола', 1);
+  busy(async () => {
+    const r = await api('login', { login, password });
+    setToken(r.token); S.data = null; S.view = 'home';
+    await reload(); S.known = signalIds(); initPush(); render(); toast('Здравей, ' + r.name + '!');
+  });
+}
+function logout() {
+  if (!confirm('Изход от CoffeeVend на това устройство?')) return;
+  setToken(''); S.data = null; S.users = null;
+  try { if (window.OneSignal && OneSignal.logout) OneSignal.logout(); } catch (e) {}
+  render();
+}
+
 function render() {
-  if (!TOKEN) { $('hdr').innerHTML = `<div class="brand"><div class="logo">${ico('logo')}</div><div><b>CoffeeVend</b><small>Вендинг управление</small></div></div>`; $('app').innerHTML = '<div class="center">Отвори приложението чрез личния си линк за достъп.</div>'; return; }
+  if (!TOKEN) return loginScreen();
   if (!S.data) return;
   if (MAP) { MAP.remove(); MAP = null; } if (MINI) { MINI.remove(); MINI = null; }
   const kind = (S.view === 'home' || !V[S.view]) && !isDesk() ? 'cup' : S.view === 'refill' ? 'beans' : '';
@@ -1622,11 +1686,25 @@ function permChanged() {
 function saveUser() {
   const name = val('u_name'); if (!name) return toast('Въведи име', 1);
   const role = val('u_role'), perms = S.users.perms.map(p => p[0]).filter(k => $('p_' + k) && $('p_' + k).checked), areas = curAreas().join(',');
-  busy(async () => { await api('saveUser', { userToken: S.editUser || '', name, role, perms, areas, active: $('u_active').checked }); S.users = null; toast(S.editUser ? 'Правата са записани ✔' : 'Служителят е създаден — копирай линка му ✔'); go('users'); });
+  const login = val('u_login'), password = $('u_pass').value.trim();
+  if (!login) return toast('Въведи потребител', 1);
+  busy(async () => {
+    const r = await api('saveUser', { userToken: S.editUser || '', name, role, perms, areas, active: $('u_active').checked, login, password });
+    if (r.self) setToken(r.token);
+    S.cred = password ? { name, login, password } : null;
+    S.users = null; S.loginDraft = S.passDraft = null;
+    toast(password ? 'Записано — изпрати данните за вход ✔' : 'Записано ✔'); go('users');
+  });
 }
-function sendLink(name, url) {
-  const text = 'Здравей, ' + name + '! Това е твоят линк за CoffeeVend. Отвори го и го добави на началния екран: ' + url;
-  if (navigator.share) navigator.share({ title: 'CoffeeVend', text }).catch(() => {}); else copy(text);
+const genPass = () => { const c = 'abcdefghkmnpqrstuvwxyz23456789'; let p = ''; const a = crypto.getRandomValues(new Uint32Array(8)); a.forEach(x => p += c[x % c.length]); return p; };
+const credText = () => 'Здравей, ' + S.cred.name + '! Влез в CoffeeVend:\n' + APP_URL + '\nПотребител: ' + S.cred.login + '\nПарола: ' + S.cred.password + '\nНа iPhone: отвори адреса в Safari → Сподели → Добави към началния екран.';
+function sendCred() { const text = credText(); if (navigator.share) navigator.share({ title: 'CoffeeVend', text }).catch(() => {}); else copy(text); }
+function savePass() {
+  const u = S.data.user, login = u.login || val('p_login'), password = $('p_new').value, rep = $('p_rep').value;
+  if (!login) return toast('Въведи потребител', 1);
+  if (password.length < 4) return toast('Паролата трябва да е поне 4 знака', 1);
+  if (password !== rep) return toast('Двете пароли не съвпадат', 1);
+  busy(async () => { const r = await api('changePass', { old: u.hasPass ? $('p_old').value : '', login, password }); setToken(r.token); await reload(); toast('Паролата е сменена ✔'); go('profile'); });
 }
 function copy(t) { try { navigator.clipboard.writeText(t).then(() => toast('Копирано ✔')).catch(() => toast('Копирането не е разрешено — маркирай линка', 1)); } catch (e) { toast('Копирането не е разрешено — маркирай линка', 1); } }
 function exportCSV() {
@@ -1759,6 +1837,7 @@ document.addEventListener('visibilitychange', () => { if (!document.hidden) poll
     document.title = (S.known.length ? '(' + S.known.length + ') ' : '') + 'CoffeeVend';
     if (qs.get('m') && mById(qs.get('m'))) openMachine(qs.get('m')); else render();
   } catch (e) {
+    if (!TOKEN) return render();
     $('hdr').innerHTML = `<div class="brand"><div class="logo">${ico('logo')}</div><div><b>CoffeeVend</b></div></div>`;
     $('app').innerHTML = `<div class="center">⚠️ ${esc(e.message)}</div>`;
   }

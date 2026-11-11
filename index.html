@@ -1493,7 +1493,9 @@ function doLogin() {
   busy(async () => {
     const r = await api('login', { login, password });
     setToken(r.token); S.data = null; S.view = 'home';
-    await reload(); S.known = signalIds(); initPush(); render(); toast('Здравей, ' + r.name + '!');
+    await reload(); S.known = signalIds();
+    if (OS) { try { await OS.login(S.data.user.pushId); } catch (e) {} } else initPush();
+    render(); toast('Здравей, ' + r.name + '!');
   });
 }
 function logout() {

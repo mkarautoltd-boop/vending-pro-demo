@@ -26,6 +26,7 @@
 --r:14px;--font:"Manrope",-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif}
 *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
 html,body{margin:0;max-width:100%;overflow-x:hidden;background:var(--bg)}
+body.kb .tabbar{display:none!important}
 body{font-family:var(--font);color:var(--txt);font-size:15px;-webkit-text-size-adjust:100%;min-height:100vh;background:radial-gradient(900px 420px at 10% -5%,rgba(214,163,84,.07),transparent 60%),radial-gradient(700px 400px at 100% 0%,rgba(214,163,84,.04),transparent 60%),var(--bg);background-attachment:fixed}
 button,input,select,textarea{font-family:inherit}
 svg.i{width:20px;height:20px;stroke:currentColor;fill:none;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round;flex:none}
@@ -1827,6 +1828,12 @@ async function poll() {
   } catch (e) {}
 }
 setInterval(poll, 60000);
+/* iPhone: долната лента се крие, докато е отворена клавиатурата, и се връща на място след нея */
+const isField = el => el && (el.tagName === 'TEXTAREA' || el.tagName === 'SELECT' || (el.tagName === 'INPUT' && !/^(checkbox|radio|button|submit|range|file)$/.test(el.type)));
+function fixBar() { if (!isField(document.activeElement)) { document.body.classList.remove('kb'); window.scrollTo(window.scrollX, window.scrollY); } }
+document.addEventListener('focusin', e => { if (isField(e.target)) document.body.classList.add('kb'); });
+document.addEventListener('focusout', () => { setTimeout(fixBar, 120); setTimeout(fixBar, 450); });
+if (window.visualViewport) visualViewport.addEventListener('resize', () => { if (visualViewport.height >= window.innerHeight - 40) setTimeout(fixBar, 50); });
 document.addEventListener('visibilitychange', () => { if (!document.hidden) poll(); });
 
 /* ---------- Старт ---------- */

@@ -718,12 +718,12 @@ function jobRow(r) {
   else if (r.status === 'Поет') { c = 'c-bad'; i = 'wrench'; t = r.problem; s = 'В процес · ' + esc(r.takenBy || ''); }
   else { c = 'c-bad'; i = r.source === 'Сигнал' ? 'siren' : 'wrench'; t = r.problem; s = (r.source === 'Сигнал' ? 'Нов сигнал' : 'Отворен') + (r.urgent ? ' · СПЕШНО' : ''); }
   const pl = r.status === 'Приключен' ? `<span class="pill p-gline">${ico('check')}Завършен</span>` : r.status === 'Планиран' ? `<span class="pill p-gline">${ico('calsq')}Планиран</span>` : r.status === 'Поет' ? `<span class="pill p-line">${ico('square')}В процес</span>` : `<span class="pill p-bad"><i class="d"></i>${r.source === 'Сигнал' ? 'Нов сигнал' : 'Отворен'}</span>`;
-  return `<div class="job" onclick="go('job',{jobId:'${esc(r.id)}'})"><div class="ji ${c}">${ico(i)}</div><div class="jt"><b>№${esc(r.machineId)} – ${esc(t)}</b><div class="mut" style="margin:2px 0 6px">${esc(m.name || '')}${m.address ? ', ' + esc(m.address) : ''}${r.caller && r.status !== 'Приключен' ? (/^Tremol/.test(r.caller) ? ' · от Tremol (ФУ)' : ' · обадил се: ' + esc(r.caller)) : ''}${r.status === 'Приключен' && r.action ? ' · ' + esc(r.action) : ''}${r.cost !== '' && r.cost != null && r.status === 'Приключен' ? ' · ' + eur(r.cost) : ''} · ${r.status === 'Планиран' ? fmtD(r.date) : r.status === 'Приключен' ? fmtD(r.closedDate || r.date) : r.status === 'Поет' ? esc(r.takenBy || '') : fmtD(r.date)}</div>${pl}${r.urgent && r.status !== 'Приключен' ? '<span class="urg">СПЕШНО</span>' : ''}</div>${ico('right', 'chev')}</div>`;
+  return `<div class="job" onclick="go('job',{jobId:'${esc(r.id)}'})"><div class="ji ${c}">${ico(i)}</div><div class="jt"><b>№${esc(r.machineId)} – ${esc(t)}</b><div class="mut" style="margin:2px 0 6px">${esc(m.name || '')}${m.address ? ', ' + esc(m.address) : ''}${r.caller && r.status !== 'Приключен' ? srcText(r.caller) : ''}${r.status === 'Приключен' && r.action ? ' · ' + esc(r.action) : ''}${r.cost !== '' && r.cost != null && r.status === 'Приключен' ? ' · ' + eur(r.cost) : ''} · ${r.status === 'Планиран' ? fmtD(r.date) : r.status === 'Приключен' ? fmtD(r.closedDate || r.date) : r.status === 'Поет' ? esc(r.takenBy || '') : fmtD(r.date)}</div>${pl}${r.urgent && r.status !== 'Приключен' ? '<span class="urg">СПЕШНО</span>' : ''}</div>${ico('right', 'chev')}</div>`;
 }
 function signalCard(r) {
   const m = mById(r.machineId) || {};
   const st = r.status === 'Приключен' ? ['done', 'p-gline', 'Завършен'] : r.status === 'Поет' ? ['taken', 'p-line', 'В процес'] : r.status === 'Планиран' ? ['plan', 'p-gline', 'Планиран'] : r.status === 'Отворен' ? ['', 'p-bad', 'Отворен'] : ['', 'p-bad', 'Нов'];
-  let who = r.status === 'Планиран' ? `Профилактика на ${fmtD(r.date)}` : r.source === 'Сигнал' ? `Подаден ${fmtDM(r.date)}${r.time ? ' ' + esc(r.time) : ''} от ${esc(r.user)}${r.caller ? (/^Tremol/.test(r.caller) ? ' · от Tremol (ФУ)' : ' · обадил се: ' + esc(r.caller)) : ''}` : `Отворен ${fmtDM(r.date)} от ${esc(r.user)}`;
+  let who = r.status === 'Планиран' ? `Профилактика на ${fmtD(r.date)}` : r.source === 'Сигнал' ? `Подаден ${fmtDM(r.date)}${r.time ? ' ' + esc(r.time) : ''} от ${esc(r.user)}${srcText(r.caller)}` : `Отворен ${fmtDM(r.date)} от ${esc(r.user)}`;
   if (r.takenBy && r.status !== 'Приключен') who += `<br>Поет от ${esc(r.takenBy)} в ${esc(String(r.takenDate).slice(11))}`;
   if (r.status === 'Приключен') who += `<br>Поправен от ${esc(r.closedBy || '')} на ${fmtDM(r.closedDate)}${r.action ? ' · ' + esc(r.action) : ''}`;
   let btn = '';
@@ -1029,7 +1029,8 @@ const V = {
     return `<div class="form">${machineSelect(1)}
       <label>Какво не работи</label><div class="chips">${chips.map(c => `<button class="chip" onclick="addChip('${c}')">${c}</button>`).join('')}</div>
       <textarea id="f_problem" style="margin-top:10px" placeholder="опиши повредата" aria-label="Описание на повредата"></textarea>
-      <label for="f_caller">Кой се обади</label><input id="f_caller" placeholder="напр. охраната, управител, тел. 0888…">
+      <label class="chk" style="margin-top:14px"><input type="checkbox" id="f_round" onchange="$('f_callbox').style.display=this.checked?'none':''"> Сутрешен обход</label>
+      <div id="f_callbox"><label for="f_caller">Кой се обади</label><input id="f_caller" placeholder="напр. охраната, управител, тел. 0888…"></div>
       <label class="chk" style="margin-top:14px"><input type="checkbox" id="f_urgent"> Спешно</label>
       <div class="dim">Мениджърът получава известие на телефона.</div>
       <button class="btn" onclick="saveFault()">${ico('plus')}Изпрати сигнала</button></div>`;
@@ -1040,7 +1041,7 @@ const V = {
     if (!r) return go('service');
     const m = mById(r.machineId) || {};
     header(r.status === 'Планиран' ? 'Профилактика' : 'Поправено', 'service');
-    return `<div class="form"><div class="card"><b>№${esc(r.machineId)} – ${esc(m.name || '')}</b><div style="margin-top:4px;font-weight:700">${esc(r.problem)}</div><div class="mut">${fmtD(r.date)}${r.caller ? (/^Tremol/.test(r.caller) ? ' · от Tremol (ФУ)' : ' · обадил се: ' + esc(r.caller)) : ''}</div></div>
+    return `<div class="form"><div class="card"><b>№${esc(r.machineId)} – ${esc(m.name || '')}</b><div style="margin-top:4px;font-weight:700">${esc(r.problem)}</div><div class="mut">${fmtD(r.date)}${srcText(r.caller)}</div></div>
       <label for="x_action">Какво е направено</label><textarea id="x_action" placeholder="напр. почистен монетник, сменен предпазител"></textarea>
       ${partsPicker()}
       <div class="two"><div><label for="x_parts">Други части (текст)</label><input id="x_parts" placeholder="ако ги няма в склада"></div><div><label for="x_cost">Цена (€)</label><input id="x_cost" inputmode="decimal"></div></div>
@@ -1616,9 +1617,10 @@ function closeRepair(id) {
 }
 function takeRepair(id) { busy(async () => { await api('takeRepair', { id }); await reload(); toast('Сигналът е поет ✔'); render(); }); }
 function addChip(c) { const t = $('f_problem'); t.value = t.value ? t.value.replace(/\s*$/, '') + ', ' + c.toLowerCase() : c; t.focus(); }
+const srcText = c => !c ? '' : /^Tremol/.test(c) ? ' · от Tremol (ФУ)' : /обход/i.test(c) ? ' · сутрешен обход' : ' · обадил се: ' + esc(c);
 function saveFault() {
   if (!need()) return; if (!val('f_problem')) return toast('Опиши какво не работи', 1);
-  const data = { machineId: S.sel, problem: val('f_problem'), caller: val('f_caller'), urgent: $('f_urgent').checked };
+  const data = { machineId: S.sel, problem: val('f_problem'), caller: $('f_round').checked ? 'Сутрешен обход' : val('f_caller'), urgent: $('f_urgent').checked };
   busy(async () => {
     const r = await api('addFault', data);
     await reload(); S.known = signalIds();

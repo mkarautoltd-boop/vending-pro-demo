@@ -335,6 +335,9 @@ const stored = (() => { try { return localStorage.getItem('vp_token'); } catch (
 let TOKEN = stored || (stored === null ? qs.get('t') : '') || '';
 if (TOKEN && TOKEN !== stored) { try { localStorage.setItem('vp_token', TOKEN); } catch (e) {} }
 if (qs.get('t')) { try { history.replaceState(null, '', location.pathname + (qs.get('m') ? '?m=' + encodeURIComponent(qs.get('m')) : '')); } catch (e) {} }
+// Последните данни се пазят на телефона — приложението се отваря веднага с тях и се обновява отзад
+function saveLocal(d) { try { localStorage.setItem('vp_data', JSON.stringify({ tok: TOKEN, at: Date.now(), d })); } catch (e) {} }
+function loadLocal() { try { const x = JSON.parse(localStorage.getItem('vp_data') || 'null'); return x && x.tok === TOKEN && Date.now() - x.at < 7 * 864e5 ? x.d : null; } catch (e) { return null; } }
 function setToken(t) { TOKEN = t || ''; try { localStorage.setItem('vp_token', TOKEN); } catch (e) {} }
 const APP_URL = location.origin + location.pathname;
 
@@ -342,7 +345,8 @@ async function api(action, data = {}) {
   const r = await fetch(API_URL, { method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' }, body: JSON.stringify(Object.assign({ action, token: TOKEN, boot: action === 'bootstrap' ? 0 : 1 }, data)) });
   const j = await r.json();
   if (!j.ok) { if (/Сесията е изтекла|Влез с потребител/.test(j.error) && action !== 'login') { setToken(''); S.data = null; render(); } throw new Error(j.error); }
-  if (j.boot) { S.data = j.boot; S.freshAt = Date.now(); }
+  if (j.boot) { S.data = j.boot; S.freshAt = Date.now(); saveLocal(j.boot); }
+  if (action === 'bootstrap') saveLocal(j.data);
   return j.data;
 }
 
@@ -1501,7 +1505,7 @@ function doLogin() {
 }
 function logout() {
   if (!confirm('Изход от CoffeeVend на това устройство?')) return;
-  setToken(''); S.data = null; S.users = null;
+  setToken(''); S.data = null; S.users = null; try { localStorage.removeItem('vp_data'); } catch (e) {}
   try { if (window.OneSignal && OneSignal.logout) OneSignal.logout(); } catch (e) {}
   render();
 }
@@ -1843,6 +1847,18 @@ document.addEventListener('visibilitychange', () => { if (!document.hidden) poll
 /* ---------- Старт ---------- */
 (async () => {
   if (!TOKEN) return render();
+  const cached = loadLocal();
+  if (cached) {
+    // показваме веднага последните данни, после ги обновяваме
+    S.data = cached; S.known = signalIds(); S.stale = 1;
+    if (qs.get('m') && mById(qs.get('m'))) openMachine(qs.get('m')); else render();
+    try {
+      S.data = await api('bootstrap'); S.stale = 0; S.known = signalIds(); initPush();
+      document.title = (S.known.length ? '(' + S.known.length + ') ' : '') + 'CoffeeVend';
+      if (!isField(document.activeElement) && !S.busy) { const y = window.scrollY; render(); window.scrollTo(0, y); }
+    } catch (e) { S.stale = 0; if (!TOKEN) return render(); toast('Няма връзка — показани са последните данни', 1); }
+    return;
+  }
   try {
     await reload(); S.known = signalIds(); initPush();
     document.title = (S.known.length ? '(' + S.known.length + ') ' : '') + 'CoffeeVend';

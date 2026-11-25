@@ -1395,7 +1395,7 @@ function cashView() {
   let h = '';
   if (CT) h += `<div class="mini m4" style="margin-bottom:14px"><div><span>Преброено днес</span><b class="num" style="color:var(--gold)">${eur(CT.today)}</b><em class="dim" style="font-weight:600">${CT.todayN} ${CT.todayN === 1 ? 'каса' : 'каси'}</em></div><div><span>Преброено ${mn(today())}</span><b class="num">${eur(CT.month)}</b>${trend(pct(CT.month, CT.prev), 'спрямо същите дни')}</div><div><span>Каси този месец</span><b class="num">${CT.monthN}</b><em class="dim" style="font-weight:600">ср. ${eur(CT.monthN ? CT.month / CT.monthN : 0)}</em></div><div><span>Чакат броене</span><b class="num" style="color:${P.length ? 'var(--warn)' : 'var(--txt)'}">${P.length}</b><em class="dim" style="font-weight:600">${P.length ? 'плика' : 'всичко е преброено'}</em></div></div>`;
   h += '<div class="grid g2e" style="align-items:start">';
-  if (can('cash_take', 'cash_count')) h += `<div><h2 style="margin-top:0">Чакат преброяване (${P.length})</h2>` + (P.map(x => {
+  if (can('cash_take', 'cash_count')) h += `<div><h2 style="margin-top:0">Чакат преброяване (${P.length})${CQn ? ` <span class="dim" style="font-size:14px;font-weight:600">· записва се ${CQn}…</span>` : ''}</h2>` + (P.map(x => {
     const m = mById(x.machineId) || {};
     return `<div class="card" style="padding:12px 14px"><div style="display:flex;justify-content:space-between;gap:10px"><b>№${esc(x.machineId)} – ${esc(m.name || '')}</b>${x.bag ? `<span class="pill p-gold">плик ${esc(x.bag)}</span>` : ''}</div><div class="mut" style="margin-top:2px">Взета ${fmtD(x.date)} от ${esc(x.user)}</div>
       ${can('cash_count') ? `<div class="inl"><input id="amt_${esc(x.id)}" inputmode="decimal" placeholder="Преброена сума €" aria-label="Преброена сума"><button class="btn" onclick="countCash('${esc(x.id)}')">Запиши</button></div>` : ''}</div>`;
@@ -1562,7 +1562,33 @@ function saveReading() {
   busy(async () => { await api('addReading', data); await done('Отчетът е записан ✔', S.fromVisit ? 'visit' : 'machine')(); });
 }
 function saveCash() { if (!need()) return; busy(async () => { await api('addCash', { machineId: S.sel, date: val('f_date'), bag: val('f_bag'), note: val('f_note') }); await done('Касата е отбелязана ✔', S.fromVisit ? 'visit' : 'machine')(); }); }
-function countCash(id) { const a = val('amt_' + id); if (!a) return toast('Въведи преброената сума', 1); busy(async () => { await api('countCash', { id, amount: a }); await done('Сумата е записана ✔', 'finance', { finTab: 'cash' })(); const CT = S.data.cashTotals; if (CT) toast('Записано ✔ · Преброено днес общо: ' + eur(CT.today) + ' (' + CT.todayN + (CT.todayN === 1 ? ' каса)' : ' каси)')); }); }
+// Касата: записът е мигновен на екрана, а към Google се праща във фонов режим (една след друга)
+let CQ = Promise.resolve(), CQn = 0;
+window.addEventListener('beforeunload', e => { if (CQn) { e.preventDefault(); e.returnValue = ''; } });
+function countCash(id) {
+  const a = val('amt_' + id); if (!a) return toast('Въведи преброената сума', 1);
+  const amt = parseFloat(String(a).replace(',', '.').replace(/\s/g, ''));
+  if (!(amt >= 0)) return toast('Невалидна сума', 1);
+  const P = S.data.pendingCash, i = P.findIndex(x => String(x.id) === String(id)); if (i < 0) return;
+  const rec = P.splice(i, 1)[0], CT = S.data.cashTotals, r2 = x => Math.round(x * 100) / 100;
+  const add = k => { if (CT) { CT.today = r2(CT.today + k * amt); CT.todayN += k; CT.month = r2(CT.month + k * amt); CT.monthN += k; } };
+  add(1);
+  const y = window.scrollY; render(); window.scrollTo(0, y);
+  if (CT) toast('Записано ✔ · Преброено днес общо: ' + eur(CT.today) + ' (' + CT.todayN + (CT.todayN === 1 ? ' каса)' : ' каси)'));
+  CQn++; S.cashSaving = CQn;
+  CQ = CQ.then(() => api('countCash', { id, amount: String(amt), boot: 0 })).then(() => {}, e => {
+    P.push(rec); add(-1); toast('№' + rec.machineId + ' НЕ е записана: ' + e.message + ' — въведи я пак', 1);
+    if (!isField(document.activeElement)) render();
+  }).then(async () => {
+    S.cashSaving = --CQn;
+    if (CQn) { if (S.view === 'finance' && !isField(document.activeElement)) { const y3 = window.scrollY; render(); window.scrollTo(0, y3); } return; }
+    try { // всичко е записано → тихо опресняване
+      const d = await api('bootstrap'), f = S.finMonth ? await api('finance', { month: S.finMonth }) : null;
+      if (CQn) return; S.data = d; if (f) S.fin = f;
+      if (S.view === 'finance' && !isField(document.activeElement)) { const y2 = window.scrollY; render(); window.scrollTo(0, y2); }
+    } catch (e) {}
+  });
+}
 function doTask(t) {
   t = String(t || '').trim(); if (!t) return toast('Напиши какво е направено', 1);
   busy(async () => { await api('addCheck', { machineId: S.sel, kind: 'task', note: t, date: S.visitDate && S.visitDate < today() ? S.visitDate : today() }); await reload(); toast('Отметнато ✔ ' + t); render(); });
